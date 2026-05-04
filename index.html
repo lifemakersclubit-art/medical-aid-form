@@ -69,7 +69,7 @@ body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--tx);min-hei
   <div class="hico">💊</div>
   <div>
     <h1>استمارة تسجيل المساعدات الطبية</h1>
-    <p>جمعية صناع الحياة المنوفية — نظام إدارة الحالات</p>
+    <p>نظام ادارة الصرف العام _الملف الطبي بصناع الحياة المنوفية</p>
   </div>
 </div>
 <div class="pbw"><div class="pb" id="pb"></div></div>
@@ -85,7 +85,6 @@ body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--tx);min-hei
 
   <form id="F" novalidate>
 
-    <!-- بيانات الحالة -->
     <div class="card">
       <div class="ch"><span>👤</span> بيانات الحالة الأساسية</div>
       <div class="cb">
@@ -128,7 +127,6 @@ body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--tx);min-hei
       </div>
     </div>
 
-    <!-- المستندات -->
     <div class="card">
       <div class="ch"><span>📋</span> المستندات والروشتة</div>
       <div class="cb">
@@ -165,7 +163,6 @@ body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--tx);min-hei
       </div>
     </div>
 
-    <!-- الأدوية -->
     <div class="card">
       <div class="ch g"><span>💊</span> بيانات الأدوية<span style="font-size:.73rem;opacity:.8;margin-right:auto">يمكن إضافة أكثر من دواء</span></div>
       <div class="cb">
@@ -216,8 +213,8 @@ body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--tx);min-hei
 </div>
 
 <script>
-// ═══ رابط الـ API — استبدله برابطك ═══
-const API = "https://script.google.com/macros/s/AKfycbyHzOuZ8BrJQ47Ce9dLd-Zt7F0adB5oj3rK_AxPevQLQm2v180zY0S3iiZq5dVs2g_Rhw/exec";
+const API = "https://script.google.com/macros/s/AKfycbwz0XCU26rTsptPEiqg2Dg5Uz1wPGTIneZK6hDmg7yZhxzGDZXHz0fD7m63jTOSiAzP4A/exec";
+
 // ─── NID ───────────────────────────────────────────────────
 let nidOK=null, nidBusy=false, nidTimer=null;
 
@@ -242,16 +239,10 @@ function onNID(el){
 async function chkNID(nid){
   const el=g('nid'), ic=g('nIco');
   try{
-    // استخدام no-cors mode كـ fallback للموبايل
-    const ctrl = new AbortController();
-    const to = setTimeout(()=>ctrl.abort(), 8000);
-    
-    const res=await fetch(API+'?action=checkNID&nid='+encodeURIComponent(nid), {
-      signal: ctrl.signal,
-      headers: { 'Accept': 'application/json' }
-    });
+    const ctrl=new AbortController();
+    const to=setTimeout(()=>ctrl.abort(),8000);
+    const res=await fetch(API+'?action=checkNID&nid='+encodeURIComponent(nid),{signal:ctrl.signal});
     clearTimeout(to);
-    
     const d=await res.json();
     nidBusy=false; hid('nChk'); ic.style.display='inline';
     if(d.exists){
@@ -261,8 +252,7 @@ async function chkNID(nid){
       nidOK=true; el.classList.add('ok'); ic.textContent='🟢';
     }
   }catch(e){
-    nidBusy=false; hid('nChk'); ic.textContent='🟡'; nidOK='err';
-    console.error('NID check error:', e);
+    nidBusy=false; hid('nChk'); g('nIco').textContent='🟡'; nidOK='err';
   }
   upBar();
 }
@@ -300,11 +290,7 @@ function addM(){
 // ─── Progress ──────────────────────────────────────────────
 function upBar(){
   const f=['caseName','phone','center'].filter(id=>g(id)?.value?.trim()).length;
-  const done=f
-    +(g('nid')?.value?.length===14?1:0)
-    +(g('pFile')?.files?.length>0?1:0)
-    +(g('iFile')?.files?.length>0?1:0)
-    +(g('mList')?.children?.length>0?1:0);
+  const done=f+(g('nid')?.value?.length===14?1:0)+(g('pFile')?.files?.length>0?1:0)+(g('iFile')?.files?.length>0?1:0)+(g('mList')?.children?.length>0?1:0);
   g('pb').style.width=Math.round(done/7*100)+'%';
 }
 document.querySelectorAll('input,select,textarea').forEach(el=>el.addEventListener('input',upBar));
@@ -316,17 +302,12 @@ function hid(id){g(id).style.display='none';}
 function showE(id,msg){const e=g(id);e.textContent=msg;e.style.display='block';}
 function sOv(id){g(id).classList.add('show');}
 function cOv(id){g(id).classList.remove('show');}
-function setLoad(on,txt='✅ حفظ وتسجيل البيانات'){
+function setLoad(on){
   g('sBtn').disabled=on;
   g('spin').style.display=on?'block':'none';
-  g('sTxt').textContent=on?txt:'✅ حفظ وتسجيل البيانات';
+  g('sTxt').textContent=on?'جارٍ الحفظ...':'✅ حفظ وتسجيل البيانات';
 }
-const toB64=f=>new Promise((res,rej)=>{
-  const r=new FileReader();
-  r.readAsDataURL(f);
-  r.onload=()=>res(r.result);
-  r.onerror=rej;
-});
+const toB64=f=>new Promise((res,rej)=>{const r=new FileReader();r.readAsDataURL(f);r.onload=()=>res(r.result);r.onerror=rej;});
 
 function resetAll(){
   cOv('ovS');
@@ -347,42 +328,39 @@ g('F').addEventListener('submit', async function(e){
   document.querySelectorAll('.fe').forEach(el=>el.style.display='none');
   let ok=true;
 
-  const caseName = g('caseName').value.trim();
-  const nid      = g('nid').value.trim();
-  const phone    = g('phone').value.trim();
-  const center   = g('center').value;
-  const notes    = g('notes').value.trim();
-  const pF       = g('pFile').files[0];
-  const iF       = g('iFile').files[0];
+  const caseName=g('caseName').value.trim();
+  const nid=g('nid').value.trim();
+  const phone=g('phone').value.trim();
+  const center=g('center').value;
+  const notes=g('notes').value.trim();
+  const pF=g('pFile').files[0];
+  const iF=g('iFile').files[0];
 
-  if(!caseName)          {showE('e1','يرجى إدخال الاسم');ok=false;}
-  if(nid.length!==14)    {showE('e2','يرجى إدخال رقم قومي صحيح (14 رقم)');ok=false;}
+  if(!caseName)           {showE('e1','يرجى إدخال الاسم');ok=false;}
+  if(nid.length!==14)     {showE('e2','يرجى إدخال رقم قومي صحيح (14 رقم)');ok=false;}
   if(!phone||phone.length<10){showE('e3','يرجى إدخال رقم هاتف صحيح');ok=false;}
-  if(!center)            {showE('e4','يرجى اختيار المركز');ok=false;}
-  if(!pF)                {showE('e5','يرجى رفع صورة الروشتة');ok=false;}
-  if(!iF)                {showE('e6','يرجى رفع صورة البطاقة');ok=false;}
+  if(!center)             {showE('e4','يرجى اختيار المركز');ok=false;}
+  if(!pF)                 {showE('e5','يرجى رفع صورة الروشتة');ok=false;}
+  if(!iF)                 {showE('e6','يرجى رفع صورة البطاقة');ok=false;}
 
   const mNames=[...document.querySelectorAll('[name="mn[]"]')].map(i=>i.value.trim());
-  const mQtys =[...document.querySelectorAll('[name="mq[]"]')].map(i=>i.value.trim());
+  const mQtys=[...document.querySelectorAll('[name="mq[]"]')].map(i=>i.value.trim());
   if(!mNames.length||mNames.some(n=>!n)||mQtys.some(q=>!q)){
     alert('يرجى إدخال بيانات الأدوية كاملة'); ok=false;
   }
   if(!ok) return;
 
-  // فحص التكرار
   if(nidBusy){alert('جارٍ التحقق من الرقم القومي، انتظر لحظة...');return;}
   if(nidOK===false){g('rNID').textContent=nid;sOv('ovR');return;}
 
-  // لو لم يفحص بعد — نفعله الآن
+  // فحص إضافي عند الإرسال لو لم يُفحص بعد
   if(nidOK===null||nidOK==='err'){
-    setLoad(true,'جارٍ التحقق...');
+    setLoad(true);
+    g('sTxt').textContent='جارٍ التحقق...';
     try{
-      const ctrl = new AbortController();
-      const to = setTimeout(()=>ctrl.abort(), 8000);
-      const r=await fetch(API+'?action=checkNID&nid='+encodeURIComponent(nid), {
-        signal: ctrl.signal,
-        headers: { 'Accept': 'application/json' }
-      });
+      const ctrl=new AbortController();
+      const to=setTimeout(()=>ctrl.abort(),8000);
+      const r=await fetch(API+'?action=checkNID&nid='+encodeURIComponent(nid),{signal:ctrl.signal});
       clearTimeout(to);
       const d=await r.json();
       if(d.exists){setLoad(false);g('rNID').textContent=nid;sOv('ovR');return;}
@@ -390,37 +368,32 @@ g('F').addEventListener('submit', async function(e){
     setLoad(false);
   }
 
-  // إرسال البيانات — استخدام FormData لتجنب CORS Preflight
-  setLoad(true,'جارٍ الحفظ...');
+  // ═══ الإرسال كـ JSON — يتوافق مع JSON.parse في Apps Script ═══
+  setLoad(true);
   try{
     const [pB64,iB64]=await Promise.all([toB64(pF),toB64(iF)]);
-    
-    // نرسل كـ x-www-form-urlencoded لتجنب Preflight
-    const params = new URLSearchParams();
-    params.append('action', 'submit');
-    params.append('caseName', caseName);
-    params.append('nid', nid);
-    params.append('phone', phone);
-    params.append('center', center);
-    params.append('notes', notes);
-    params.append('medicines', JSON.stringify(mNames.map((n,i)=>({name:n,qty:mQtys[i]}))));
-    params.append('presc', pB64);
-    params.append('idCard', iB64);
 
-    const ctrl = new AbortController();
-    const to = setTimeout(()=>ctrl.abort(), 25000);
-    
+    const payload={
+      caseName,
+      nid,
+      phone,
+      center,
+      notes,
+      medicines: JSON.stringify(mNames.map((n,i)=>({name:n,qty:mQtys[i]}))),
+      presc: pB64,
+      idCard: iB64
+    };
+
+    const ctrl=new AbortController();
+    const to=setTimeout(()=>ctrl.abort(),60000); // دقيقة كاملة للصور
+
     const res=await fetch(API,{
       method:'POST',
-      signal: ctrl.signal,
-      headers:{
-        'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8',
-        'Accept':'application/json'
-      },
-      body: params.toString()
+      body: JSON.stringify(payload)
+      // بدون Content-Type header عشان Apps Script يقبله
     });
     clearTimeout(to);
-    
+
     const data=await res.json();
     setLoad(false);
 
@@ -434,8 +407,8 @@ g('F').addEventListener('submit', async function(e){
     }
   }catch(err){
     setLoad(false);
-    console.error('Submit error:', err);
-    g('eMsg').textContent='تعذّر الاتصال: '+err.message; sOv('ovE');
+    g('eMsg').textContent='تعذّر الاتصال: '+err.message;
+    sOv('ovE');
   }
 });
 
